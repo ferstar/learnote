@@ -1,0 +1,93 @@
+----------------------------------------------------------------------------------------
+1. 先安装好trunk版
+svn co svn://svn.openwrt.org/openwrt/trunk
+cd trunk
+----------------------------------------------------------------------------------------
+2. 开始移植
+
+2.1 复制mach-hg255d.c到trunk/target/linux/ramips/files/arch/mips/ralink/rt305x/
+
+2.2 复制hg255d.mk到target/linux/ramips/rt305x/profiles/
+
+2.3 编辑trunk/target/linux/ramips/image/Makefile
+
+在mtdlayout_edimax_3g6200n的上面增加:
+mtdlayout_16M=256k(u-boot)ro,128k(u-boot-env)ro,128k(factory)ro,1024k(kernel),14848k(rootfs),15872k@0x80000(firmware),16384k@0x0(fullflash)
+kernel_size_16M=1048576
+rootfs_size_16M=15204352
+define BuildFirmware/GENERIC_16M
+	$(call BuildFirmware/Generic,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_16M)),$(kernel_size_16M),$(rootfs_size_16M))
+endef
+
+define BuildFirmware/GENERIC_16M/initramfs
+	$(call BuildFirmware/Generic/initramfs,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_16M)))
+endef
+
+在mtdlayout_nw718的上面增加:
+define BuildFirmware/HG255D
+	$(call BuildFirmware/GENERIC_16M,$(1),hg255d,HG255D,ttyS1,57600,phys)
+endef
+
+在define Image/Build/Profile/FREESTATION5的上面增加:
+define Image/Build/Profile/HG255D
+	$(call Image/Build/Template/$(fs_squash)/$(1),HG255D)
+endef
+
+在 $(call Image/Build/Profile/FREESTATION5,$(1))的上面增加:
+	$(call Image/Build/Profile/HG255D,$(1))
+
+2.4 编辑trunk/target/linux/ramips/files/arch/mips/ralink/rt305x/Kconfig
+
+在config RT305X_MACH_FREESTATION5的上面增加:
+config RT305X_MACH_HG255D
+	bool "HuaWei HG255D board support"
+	select RALINK_DEV_GPIO_BUTTONS
+	select RALINK_DEV_GPIO_LEDS
+
+2.5 编辑trunk/target/linux/ramips/files/arch/mips/ralink/rt305x/Makefile
+
+在obj-$(CONFIG_RT305X_MACH_FREESTATION5)上面增加:
+obj-$(CONFIG_RT305X_MACH_HG255D)	+= mach-hg255d.o
+
+2.6 编辑trunk/target/linux/ramips/rt305x/config-3.3
+
+在CONFIG_RT305X_MACH_FREESTATION5=y上面增加:
+CONFIG_RT305X_MACH_HG255D=y
+
+2.7 编辑trunk/target/linux/ramips/files/arch/mips/include/asm/mach-ralink/machine.h
+
+在RAMIPS_MACH_FREESTATION5,       /* ARC Freestation5 */上面增加:
+RAMIPS_MACH_HG255D,              /* HuaWei HG255D */
+
+2.8 编辑trunk/target/linux/ramips/files/arch/mips/include/asm/mach-ralink/rt305x_regs.h
+将#define RT305X_FLASH0_SIZE	(8 * 1024 * 1024)修改成为
+#define RT305X_FLASH0_SIZE	(16 * 1024 * 1024)
+
+----------------------------------------------------------------------------------------
+3. 开始编译
+make menuconfig
+选择ralink
+选择rt305x
+选择HG255D
+其他的自己随便选
+make V=99
+----------------------------------------------------------------------------------------
+4. 烧入
+编译完成后烧入,目前我使用的是lintel的uboot所以原版电信u-boot能否使用未知
+----------------------------------------------------------------------------------------
+
+因为我只是用HG255D作为测试平台,并不正是使用，因此我不使用led和buttons所以：
+
+led灯和button我还没有弄,修改mach-hg255d.c那个文件可以实现在trunk下支持。
+
+有哪个朋友有兴趣继续可以去把那个实现。
+
+这个修改我将会提交给openwrt的team，但是他们是否加入trunk我不知道。
+
+作者：hoowa.sun@gmail.com   www.freeiris.org
+
+感谢：
+lintel编写的支持程序
+www.openwrt.org.cn上参与我那篇帖子的无名英雄
+www.right.com.cn上参与我那篇帖子的无名英雄
+www.asterisk-mips.org上的嵌入式工程师

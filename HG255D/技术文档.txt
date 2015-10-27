@@ -1,0 +1,495 @@
+-----------------------------------------------------------------------------------------------------------------------
+HG255D跑trunk版测试:
+
+pluma target/linux/ramips/image/Makefile
+
+在合适的位置增加:
+mtdlayout_16M=256k(u-boot)ro,128k(u-boot-env)ro,128k(factory)ro,1024k(kernel),14848k(rootfs),15872k@0x80000(firmware),16384k@0x0(fullflash)
+kernel_size_16M=1048576
+rootfs_size_16M=15204352
+define BuildFirmware/GENERIC_16M
+	$(call BuildFirmware/Generic,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_16M)),$(kernel_size_16M),$(rootfs_size_16M))
+endef
+
+define BuildFirmware/GENERIC_16M/initramfs
+	$(call BuildFirmware/Generic/initramfs,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_16M)))
+endef
+
+在合适的位置增加:
+define BuildFirmware/HG255D
+	$(call BuildFirmware/GENERIC_16M,$(1),hg255d,HG255D,ttyS1,57600,phys)
+endef
+
+在合适的位置增加:
+define Image/Build/Profile/HG255D
+	$(call Image/Build/Template/$(fs_squash)/$(1),HG255D)
+endef
+
+在合适的位置增加:
+	$(call Image/Build/Profile/HG255D,$(1))
+
+pluma target/linux/ramips/files/arch/mips/ralink/rt305x/Kconfig 
+
+在合适的位置增加:
+config RT305X_MACH_HG255D
+	bool "HuaWei HG255D board support"
+	select RALINK_DEV_GPIO_BUTTONS
+	select RALINK_DEV_GPIO_LEDS
+
+
+pluma target/linux/ramips/files/arch/mips/ralink/rt305x/Makefile
+
+在合适的位置增加:
+obj-$(CONFIG_RT305X_MACH_HG255D)	+= mach-hg255d.o
+
+复制marc-hg255d.c到target/linux/ramips/files/arch/mips/ralink/rt305x/
+复制hg255d.mk到backfire/target/linux/ralink/rt305x/profiles
+
+pluma target/linux/ramips/rt305x/config-3.3
+
+合适的位置增加:
+CONFIG_RT305X_MACH_HG255D=y
+
+pluma target/linux/ramips/files/arch/mips/include/asm/mach-ralink/machine.h
+
+合适的位置增加:
+RAMIPS_MACH_HG256,              /* HuaWei HG256 */
+
+svn status比对修改过的列表:
+?       target/linux/ramips/files/arch/mips/ralink/rt305x/mach-hg255d.c
+M       target/linux/ramips/files/arch/mips/ralink/rt305x/Kconfig
+M       target/linux/ramips/files/arch/mips/ralink/rt305x/Makefile
+M       target/linux/ramips/files/arch/mips/include/asm/mach-ralink/machine.h
+M       target/linux/ramips/image/Makefile
+?       target/linux/ramips/rt305x/profiles/hg255d.mk
+M       target/linux/ramips/rt305x/config-3.3
+
+make menuconfig
+
+make V=99 J=5
+
+预设值
+backfire/target/linux/ramips/base-files/lib/preinit/06_set_iface_mac.sh (1个差异)
+base-files/etc/config/button
+base-files/etc/hotplug.d/button/00-button
+base-files/etc/uci-defaults/hg255d
+
+后期继续修改:
+M       files/arch/mips/include/asm/mach-ralink/rt305x_regs.h
+
+
+M       patches-3.3/100-mips-ralink-core.patch(有问题修改的)
+build_dir/linux-ramips_rt305x/linux-3.3.8/arch/mips/Makefile
+
++core-$(CONFIG_RALINK_RT305X)   += arch/mips/ralink/rt305x/
++cflags-$(CONFIG_RALINK_RT305X) += -I$(srctree)/arch/mips/include/asm/mach-ralink/rt305x
++load-$(CONFIG_RALINK_RT305X)   += 0xffffffff80000000
+
+-----------------------------------------------------------------------------------------------------------------------
+分析dreambox的修改记录:
+backfire的12版增加的HG255D
+变动文件:
+/backfire/target/linux/ramips/files/arch/mips/ralink/rt305x/Kconfig 
+/backfire/target/linux/ramips/files/arch/mips/ralink/rt305x/Makefile 
+增加文件:
+mach-rt-n13u.c
+mach-hg255d.c
+
+一直到433版更名为trunk  一直到518更新完毕
+
+12-518
+mach-hg255d.c 更新过4次
+
+11-518
+Kconfig更新过3次
+
+11-518
+Makefile更新过X次
+
+
+target/linux/ramips/image/Makefile
+
+
+
+增加HG255的全部过程:
+
+变更集 7
+09/16/11 13:14:05
+添加HG255D以及RT-N13U的配置文件
+位置:backfire/target/linux/ralink/rt305x/profiles
+01-HG255D.mk
+02-RT-N13UB2.mk
+
+变更集 12
+09/16/11 17:37:39 (11个月前)
+添加HG255D以及RT-N13U的MACH支持
+位置:backfire/target/linux/ramips/files/arch/mips/ralink/rt305x
+Kconfig (1个差异)
+Makefile (1个差异)
+mach-hg255d.c
+mach-rt-n13u.c
+
+变更集 45
+09/19/11 00:40:02 (11个月前)
+修复Image HG255D命名错误
+backfire/target/linux/ramips/image/Makefile (1个差异)
+
+变更集 139
+10/06/11 04:20:18 (10个月前)
+Ralink Target:
+*更新HG255D的MTD MAP，LED以及按键（未正确配置）
+*修复HG255D的固件生成格式
+位置:backfire/target/linux/ramips
+files/arch/mips/ralink/rt305x/mach-hg255d.c (5个差异)
+image/Makefile (1个差异)
+
+变更集 222
+10/25/11 14:44:21 (9个月前)
+添加 hg255d 、rt-n13 的web页面升级支持
+backfire/target/linux/ramips/base-files/lib/upgrade/platform.sh (1个差异)
+
+变更集 241
+11/03/11 13:53:22 (9个月前)
+hg255d，添加多分区支持，，编译时需要自己设定
+backfire/target/linux/ramips/files/arch/mips/ralink/rt305x/mach-hg255d.c (6个差异)
+
+变更集 242
+11/03/11 13:56:19 (9个月前)
+hg255d image分区该用分区表控制
+backfire/target/linux/ramips/image/Makefile (1个差异)
+
+变更集 407
+03/29/12 16:53:49 (4个月前)
+*更新HG255D GPIO定义
+backfire/target/linux/ramips/files/arch/mips/ralink/rt305x/mach-hg255d.c (2个差异)
+
+变更集 408
+03/31/12 06:35:03 (4个月前)
+*HG255D 自动从EEPROM获取MAC地址。
+backfire/target/linux/ramips/base-files/lib/preinit/06_set_iface_mac.sh (1个差异)
+
+变更集 409
+03/31/12 06:37:11 (4个月前)
+*HG255D 默认生成Rootfs必须小于14MB
+backfire/target/linux/ramips/image/Makefile (1个差异)
+
+变更集 411
+03/31/12 08:46:06 (4个月前)
+*HG255D更新按键支持。
+*添加Reset按键响应。
+*添加默认LED状态。
+backfire/target/linux/ramips
+Makefile (1个差异)
+base-files/etc/config
+base-files/etc/config/button
+base-files/etc/hotplug.d/button
+base-files/etc/hotplug.d/button/00-button
+base-files/etc/uci-defaults/hg255d
+files/arch/mips/ralink/rt305x/mach-hg255d.c (6个差异)
+
+变更集 517
+07/22/12 14:40:21 (12天前)
+支持更新新SoC：
+旧:
+*RT2880
+*RT3050
+*RT3050
+新:
+*RT3350
+*RT3352
+*RT3883
+*RT3662
+*RT5350(未测试)
+HG256:
+*修复千兆WAN支持。
+HG255D:
+*修复LAN WAN MAC地址重复问题。
+准备支持的新型号:
+*ASUS RT-N56U(RT3662)
+*ZyXEL WAP120NF(RT3352)
+*Buffalo WCR-HP-GN(RT3350)
+*ASUS G32 b1(RT3052)
+位置:
+trunk/target/linux/ramips
+文件:
+增加了263个
+.
+Makefile
+base-files
+base-files.mk
+base-files.old
+base-files.old/etc
+base-files.old/etc/config
+base-files.old/etc/config/button
+base-files.old/etc/diag.sh
+base-files.old/etc/hotplug.d
+base-files.old/etc/hotplug.d/button
+base-files.old/etc/hotplug.d/button/00-button
+base-files.old/etc/hotplug.d/firmware
+base-files.old/etc/hotplug.d/firmware/10-rt2x00-eeprom
+base-files.old/etc/inittab
+base-files.old/etc/uci-defaults
+base-files.old/etc/uci-defaults/fonera20n
+base-files.old/etc/uci-defaults/hg255d
+base-files.old/etc/uci-defaults/hg256
+base-files.old/etc/uci-defaults/hw550-3g
+base-files.old/etc/uci-defaults/mofi3500-3gn
+base-files.old/etc/uci-defaults/network
+base-files.old/etc/uci-defaults/nw718
+base-files.old/lib
+base-files.old/lib/firmware
+base-files.old/lib/firmware/RT305X.eeprom.default
+base-files.old/lib/preinit
+base-files.old/lib/preinit/03_preinit_do_ramips.sh
+base-files.old/lib/preinit/05_ramips_load-input_drivers.sh
+base-files.old/lib/preinit/06_set_iface_mac.sh
+base-files.old/lib/ramips.sh
+base-files.old/lib/upgrade
+base-files.old/lib/upgrade/platform.sh
+base-files/etc
+base-files/etc/config
+base-files/etc/config/button
+base-files/etc/diag.sh
+base-files/etc/hotplug.d
+base-files/etc/hotplug.d/button
+base-files/etc/hotplug.d/button/00-button
+base-files/etc/hotplug.d/firmware
+base-files/etc/hotplug.d/firmware/10-rt2x00-eeprom
+base-files/etc/inittab
+base-files/etc/uci-defaults
+base-files/etc/uci-defaults/hg255d
+base-files/etc/uci-defaults/hg256
+base-files/etc/uci-defaults/leds
+base-files/etc/uci-defaults/network
+base-files/lib
+base-files/lib/preinit
+base-files/lib/preinit/03_preinit_do_ramips.sh
+base-files/lib/preinit/05_ramips_load-input_drivers
+base-files/lib/preinit/06_set_iface_mac
+base-files/lib/ramips.sh
+base-files/lib/upgrade
+base-files/lib/upgrade/platform.sh
+files
+files/arch
+files/arch/mips
+files/arch/mips/include
+files/arch/mips/include/asm
+files/arch/mips/include/asm/mach-ralink
+files/arch/mips/include/asm/mach-ralink/common.h
+files/arch/mips/include/asm/mach-ralink/dev-gpio-buttons.h
+files/arch/mips/include/asm/mach-ralink/dev-gpio-buttons.h.new
+files/arch/mips/include/asm/mach-ralink/dev-gpio-leds.h
+files/arch/mips/include/asm/mach-ralink/gpio.h
+files/arch/mips/include/asm/mach-ralink/machine.h
+files/arch/mips/include/asm/mach-ralink/ramips_eth_platform.h
+files/arch/mips/include/asm/mach-ralink/ramips_gpio.h
+files/arch/mips/include/asm/mach-ralink/ramips_nand_platform.h
+files/arch/mips/include/asm/mach-ralink/rt288x
+files/arch/mips/include/asm/mach-ralink/rt288x.h
+files/arch/mips/include/asm/mach-ralink/rt288x/cpu-feature-overrides.h
+files/arch/mips/include/asm/mach-ralink/rt288x/irq.h
+files/arch/mips/include/asm/mach-ralink/rt288x_regs.h
+files/arch/mips/include/asm/mach-ralink/rt305x
+files/arch/mips/include/asm/mach-ralink/rt305x.h
+files/arch/mips/include/asm/mach-ralink/rt305x/cpu-feature-overrides.h
+files/arch/mips/include/asm/mach-ralink/rt305x/irq.h
+files/arch/mips/include/asm/mach-ralink/rt305x_esw_platform.h
+files/arch/mips/include/asm/mach-ralink/rt305x_regs.h
+files/arch/mips/include/asm/mach-ralink/rt3883
+files/arch/mips/include/asm/mach-ralink/rt3883.h
+files/arch/mips/include/asm/mach-ralink/rt3883/cpu-feature-overrides.h
+files/arch/mips/include/asm/mach-ralink/rt3883/irq.h
+files/arch/mips/include/asm/mach-ralink/rt3883_ehci_platform.h
+files/arch/mips/include/asm/mach-ralink/rt3883_ohci_platform.h
+files/arch/mips/include/asm/mach-ralink/rt3883_regs.h
+files/arch/mips/include/asm/mach-ralink/war.h
+files/arch/mips/pci
+files/arch/mips/pci/pci-rt288x.c
+files/arch/mips/pci/pci-rt3883.c
+files/arch/mips/ralink
+files/arch/mips/ralink/Kconfig
+files/arch/mips/ralink/Platform
+files/arch/mips/ralink/common
+files/arch/mips/ralink/common/Makefile
+files/arch/mips/ralink/common/dev-gpio-buttons.c
+files/arch/mips/ralink/common/dev-gpio-buttons.c.new
+files/arch/mips/ralink/common/dev-gpio-leds.c
+files/arch/mips/ralink/common/gpio.c
+files/arch/mips/ralink/common/intc.c
+files/arch/mips/ralink/common/intc.c.new
+files/arch/mips/ralink/common/prom.c
+files/arch/mips/ralink/common/setup.c
+files/arch/mips/ralink/rt288x
+files/arch/mips/ralink/rt288x/Kconfig
+files/arch/mips/ralink/rt288x/Makefile
+files/arch/mips/ralink/rt288x/clock.c
+files/arch/mips/ralink/rt288x/common.h
+files/arch/mips/ralink/rt288x/devices.c
+files/arch/mips/ralink/rt288x/devices.h
+files/arch/mips/ralink/rt288x/early_printk.c
+files/arch/mips/ralink/rt288x/irq.c
+files/arch/mips/ralink/rt288x/mach-f5d8235-v1.c
+files/arch/mips/ralink/rt288x/mach-rt-n15.c
+files/arch/mips/ralink/rt288x/mach-v11st-fe.c
+files/arch/mips/ralink/rt288x/mach-wli-tx4-ag300n.c
+files/arch/mips/ralink/rt288x/mach-wzr-agl300nh.c
+files/arch/mips/ralink/rt288x/rt288x.c
+files/arch/mips/ralink/rt288x/setup.c
+files/arch/mips/ralink/rt305x
+files/arch/mips/ralink/rt305x/Kconfig
+files/arch/mips/ralink/rt305x/Makefile
+files/arch/mips/ralink/rt305x/clock.c
+files/arch/mips/ralink/rt305x/common.h
+files/arch/mips/ralink/rt305x/devices.c
+files/arch/mips/ralink/rt305x/devices.h
+files/arch/mips/ralink/rt305x/early_printk.c
+files/arch/mips/ralink/rt305x/irq.c
+files/arch/mips/ralink/rt305x/mach-3g-6200n.c
+files/arch/mips/ralink/rt305x/mach-all0256n.c
+files/arch/mips/ralink/rt305x/mach-argus-atp52b.c
+files/arch/mips/ralink/rt305x/mach-bc2.c
+files/arch/mips/ralink/rt305x/mach-dir-300-revb.c
+files/arch/mips/ralink/rt305x/mach-esr-9753.c
+files/arch/mips/ralink/rt305x/mach-f5d8235-v2.c
+files/arch/mips/ralink/rt305x/mach-fonera20n.c
+files/arch/mips/ralink/rt305x/mach-freestation5.c
+files/arch/mips/ralink/rt305x/mach-hg255d.c
+files/arch/mips/ralink/rt305x/mach-hg256.c
+files/arch/mips/ralink/rt305x/mach-hw550-3g.c
+files/arch/mips/ralink/rt305x/mach-mofi3500-3gn.c
+files/arch/mips/ralink/rt305x/mach-nbg-419n.c
+files/arch/mips/ralink/rt305x/mach-nw718.c
+files/arch/mips/ralink/rt305x/mach-omni-emb.c
+files/arch/mips/ralink/rt305x/mach-psr-680w.c
+files/arch/mips/ralink/rt305x/mach-pwh2004.c
+files/arch/mips/ralink/rt305x/mach-rt-g32-revb.c
+files/arch/mips/ralink/rt305x/mach-rt-n10-plus.c
+files/arch/mips/ralink/rt305x/mach-rt-n13u.c
+files/arch/mips/ralink/rt305x/mach-sl-r7205.c
+files/arch/mips/ralink/rt305x/mach-ur-336un.c
+files/arch/mips/ralink/rt305x/mach-v22rw-2x2.c
+files/arch/mips/ralink/rt305x/mach-w306r-v20.c
+files/arch/mips/ralink/rt305x/mach-w502u.c
+files/arch/mips/ralink/rt305x/mach-wcr150gn.c
+files/arch/mips/ralink/rt305x/mach-whr-g300n.c
+files/arch/mips/ralink/rt305x/mach-wl-330n.c
+files/arch/mips/ralink/rt305x/mach-wl-330n3g.c
+files/arch/mips/ralink/rt305x/mach-wl341v3.c
+files/arch/mips/ralink/rt305x/mach-wl351.c
+files/arch/mips/ralink/rt305x/mach-wr512-3gn.c
+files/arch/mips/ralink/rt305x/mach-wr6202.c
+files/arch/mips/ralink/rt305x/mach-xdx-rn502j.c
+files/arch/mips/ralink/rt305x/rt305x.c
+files/arch/mips/ralink/rt305x/setup.c
+files/arch/mips/ralink/rt3883
+files/arch/mips/ralink/rt3883/Kconfig
+files/arch/mips/ralink/rt3883/Makefile
+files/arch/mips/ralink/rt3883/clock.c
+files/arch/mips/ralink/rt3883/common.h
+files/arch/mips/ralink/rt3883/devices.c
+files/arch/mips/ralink/rt3883/devices.h
+files/arch/mips/ralink/rt3883/early_printk.c
+files/arch/mips/ralink/rt3883/irq.c
+files/arch/mips/ralink/rt3883/mach-rt-n56u.c
+files/arch/mips/ralink/rt3883/rt3883.c
+files/arch/mips/ralink/rt3883/setup.c
+files/drivers
+files/drivers/net
+files/drivers/net/ramips
+files/drivers/net/ramips/Kconfig
+files/drivers/net/ramips/Makefile
+files/drivers/net/ramips/ramips_debugfs.c
+files/drivers/net/ramips/ramips_esw.c
+files/drivers/net/ramips/ramips_eth.h
+files/drivers/net/ramips/ramips_main.c
+files/drivers/spi
+files/drivers/spi/spi-ramips.c
+files/drivers/usb
+files/drivers/usb/dwc_otg
+files/drivers/usb/dwc_otg/Kconfig
+files/drivers/usb/dwc_otg/Makefile
+files/drivers/usb/dwc_otg/dummy_audio.c
+files/drivers/usb/dwc_otg/dwc_otg_attr.c
+files/drivers/usb/dwc_otg/dwc_otg_attr.h
+files/drivers/usb/dwc_otg/dwc_otg_cil.c
+files/drivers/usb/dwc_otg/dwc_otg_cil.h
+files/drivers/usb/dwc_otg/dwc_otg_cil_intr.c
+files/drivers/usb/dwc_otg/dwc_otg_driver.c
+files/drivers/usb/dwc_otg/dwc_otg_driver.h
+files/drivers/usb/dwc_otg/dwc_otg_hcd.c
+files/drivers/usb/dwc_otg/dwc_otg_hcd.h
+files/drivers/usb/dwc_otg/dwc_otg_hcd_intr.c
+files/drivers/usb/dwc_otg/dwc_otg_hcd_queue.c
+files/drivers/usb/dwc_otg/dwc_otg_pcd.c
+files/drivers/usb/dwc_otg/dwc_otg_pcd.h
+files/drivers/usb/dwc_otg/dwc_otg_pcd_intr.c
+files/drivers/usb/dwc_otg/dwc_otg_regs.h
+files/drivers/usb/dwc_otg/linux
+files/drivers/usb/dwc_otg/linux/dwc_otg_plat.h
+files/drivers/usb/host
+files/drivers/usb/host/ehci-rt3883.c
+files/drivers/usb/host/ohci-rt3883.c
+files/drivers/watchdog
+files/drivers/watchdog/ramips_wdt.c
+image
+image/Makefile
+patches-2.6.32
+patches-2.6.32/001-mips-add-cp0-compare-irq-function.patch
+patches-2.6.32/010-mtd_fix_cfi_cmdset_0002_erase_status_check.patch
+patches-2.6.32/011-mtd-cfi_cmdset_0002-force-word-write.patch
+patches-2.6.32/100-mips-ralink-core.patch
+patches-2.6.32/101-rt288x_serial_driver_hack.patch
+patches-2.6.32/102-rt288x-pci-driver-hook.patch
+patches-2.6.32/103-ethernet.patch
+patches-2.6.32/104-ramips-watchdog-driver.patch
+patches-2.6.32/105-ramips-spi-driver.patch
+patches-2.6.32/105-usb_dwc_otg.patch
+patches-2.6.32/106-rt3883-pci-support.patch
+patches-2.6.32/200-rt3883-ehci-glue.patch
+patches-2.6.32/201-rt3883-ohci-glue.patch
+patches-2.6.32/400-mips-multi-machine-update.patch
+patches-2.6.32/450-proc_add_cpucolck_flashsize.patch
+rt288x
+rt288x/config-2.6.32
+rt288x/profiles
+rt288x/profiles/00-default.mk
+rt288x/profiles/asus.mk
+rt288x/profiles/belkin.mk
+rt288x/target.mk
+rt305x
+rt305x/config-2.6.32
+rt305x/profiles
+rt305x/profiles/00-default.mk
+rt305x/profiles/01-HG255D.mk
+rt305x/profiles/02-RT-N13UB2.mk
+rt305x/profiles/03-HG256.mk
+rt305x/profiles/aztech.mk
+rt305x/profiles/belkin.mk
+rt305x/profiles/engenius.mk
+rt305x/profiles/freestation5.mk
+rt305x/profiles/tenda.mk
+rt305x/profiles/upvel.mk
+rt305x/target.mk
+rt3883
+rt3883/2.6.32
+rt3883/profiles
+rt3883/profiles/00-default.mk
+rt3883/profiles/asus.mk
+rt3883/target.mk
+
+
+
+
+dreambox作者给予的参考:
+base-files/etc/diag.sh (1个差异)
+base-files/etc/hotplug.d/firmware/10-rt2x00-eeprom (1个差异)
+base-files/lib/preinit/06_set_iface_mac.sh (2个差异)
+base-files/lib/ramips.sh (1个差异)
+files/arch/mips/include/asm/mach-ralink/machine.h (1个差异)
+files/arch/mips/include/asm/mach-ralink/rt305x_esw_platform.h (1个差异)
+files/arch/mips/ralink/rt305x/Kconfig (1个差异)
+files/arch/mips/ralink/rt305x/Makefile (1个差异)
+files/arch/mips/ralink/rt305x/mach-hg256.c
+files/drivers/net/ramips_esw.c (1个差异)
+image/Makefile (3个差异)
+rt305x/config-2.6.32 (5个差异)

@@ -1,0 +1,15 @@
+编译记录
+svn checkout svn://svn.openwrt.org/openwrt/trunk backfire
+./scripts/feeds update
+make defconfig
+make package/symlinks
+make menuconfig
+make menuconfig -> check nano and libncurses
+make tools/install
+make toolchain/install
+make target/compile
+make package/ncurses/compile
+make package/ncurses/install
+make package/feeds/packages/nano/compile
+make package/feeds/packages/nano/install
+make package/index
