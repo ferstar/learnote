@@ -8,7 +8,7 @@
 
 用到的软件有三
 
-1. ~~类ngrok的软件[natapp~~](https://natapp.cn/)
+1. ~~类ngrok的软件[natapp](https://natapp.cn/)~~
 2. [openVPN](https://openvpn.net/)
 3. [supervisor](http://supervisord.org/)
 
