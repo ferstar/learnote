@@ -9,7 +9,7 @@ cat /var/log/secure | awk '/Failed/ {print $(NF-3)}' > ip_list.txt
 然后查询
 
 ```shell
-python ip_query.py ip_list.txt out.csv
+python ip_query.py -i ip_list.txt -o out.csv
 ```
 
 就是利用淘宝IP地址查询API挨个把IP地址归属地查询一遍，结果放在`csv`文件中，`Excel`打开长这样
@@ -36,4 +36,3 @@ python ip_query.py ip_list.txt out.csv
 | 122.72.120.109 | 5     | 中国      | 铁通   | 华东   | 上海市    | 上海市  |        |
 | 118.244.14.49  | 5     | 中国      |      | 华北   | 北京市    | 北京市  |        |
 | 66.248.201.2   | 5     | 美国      |      |      |        |      |        |
-

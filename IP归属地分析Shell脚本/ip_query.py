@@ -1,10 +1,24 @@
 #!/usr/bin/env python
 # coding='utf-8'
+
+"""Query IP from taobao ip API
+via <http://ip.taobao.com>
+Usage:
+    ip_query.py [-i=in] [-o=out] [-v]
+    ip_query.py -h | --help | --version
+Options:
+    -h --help   show this help message and exit
+    --version   show version and exit
+    -i in       file that has ip each line [default: ips.txt]
+    -o out      output file name(with 'csv' format) [default: out.csv]
+    -v          explain what is being done
+"""
+
 import json
-import sys
 
 import pandas as pd
 import requests
+from docopt import docopt
 
 
 def query_ip(ip):
@@ -58,6 +72,8 @@ def main(fp, csv_file):
     ips = get_ip_pool(fp)
     for ip, data in ips.items():
         data.update(query_ip(ip))
+        if arguments['-v']:
+            print(data)
     df = pd.DataFrame.from_dict(ips, orient='index').sort_values(by='count', ascending=False)[
         ['count',
          'country',
@@ -73,7 +89,5 @@ def main(fp, csv_file):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        sys.exit('Usage: {} <ip_file> <out_csv_file>'.format(sys.argv[0]))
-    else:
-        main(sys.argv[1], sys.argv[2])
+    arguments = docopt(__doc__, version='Query IP 1.0')
+    main(arguments['-i'], arguments['-o'])
