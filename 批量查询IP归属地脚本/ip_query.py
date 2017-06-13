@@ -15,6 +15,8 @@ Options:
 """
 
 import json
+import os
+import sys
 
 import pandas as pd
 import requests
@@ -75,13 +77,13 @@ def main(fp, csv_file):
         if arguments['-v']:
             print(data)
     df = pd.DataFrame.from_dict(ips, orient='index').sort_values(by='count', ascending=False)[
-        ['count',
-         'country',
-         'isp',
-         'area',
-         'region',
-         'city',
-         'county'
+        ['count',  # 计数
+         'country',  # 国家
+         'isp',  # 运营商
+         'area',  # 区域
+         'region',  # 省
+         'city',  # 城市
+         'county'  # 县/区
          ]
     ]
     with open(csv_file, 'w') as fh:
@@ -90,4 +92,8 @@ def main(fp, csv_file):
 
 if __name__ == "__main__":
     arguments = docopt(__doc__, version='Query IP 1.0')
-    main(arguments['-i'], arguments['-o'])
+    in_fp, out_fp = arguments['-i'], arguments['-o']
+    if os.path.exists(in_fp):
+        main(in_fp, out_fp)
+    else:
+        sys.exit("the file '{}' does not exist".format(in_fp))
