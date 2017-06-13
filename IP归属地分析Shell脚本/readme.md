@@ -36,3 +36,21 @@ python ip_query.py -i ip_list.txt -o out.csv
 | 122.72.120.109 | 5     | 中国      | 铁通   | 华东   | 上海市    | 上海市  |        |
 | 118.244.14.49  | 5     | 中国      |      | 华北   | 北京市    | 北京市  |        |
 | 66.248.201.2   | 5     | 美国      |      |      |        |      |        |
+
+PS: 帮助信息
+
+```shell
+$ python ip_query.py -h
+Query IP from taobao ip API
+via <http://ip.taobao.com>
+Usage:
+    ip_query.py [-i=in] [-o=out] [-v]
+    ip_query.py -h | --help | --version
+Options:
+    -h --help   show this help message and exit
+    --version   show version and exit
+    -i in       file that has ip each line [default: ips.txt]
+    -o out      output file name(with 'csv' format) [default: out.csv]
+    -v          explain what is being done
+```
+
